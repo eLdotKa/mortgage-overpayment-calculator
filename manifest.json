@@ -1,0 +1,14 @@
+{
+  "name": "Mortgage Overpayment Calculator",
+  "short_name": "Mortgage Calc",
+  "description": "Compare mortgage overpayments, interest savings and your mortgage-free date.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#071b3a",
+  "icons": [
+    {"src":"icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
