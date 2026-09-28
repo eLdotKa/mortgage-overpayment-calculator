@@ -26,6 +26,19 @@
 </section>
 
 <section class="card">
+  <div class="title">My Mortgage Profile</div>
+  <div class="subtitle">Your mortgage information is stored locally on this device. Nothing in this profile needs to be uploaded to our servers.</div>
+  <div class="actions">
+    <button class="secondary" id="saveData" type="button">SAVE ON THIS DEVICE</button>
+    <button class="secondary" id="exportData" type="button">EXPORT DATA</button>
+    <label class="secondary" for="importData" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;margin:0">IMPORT DATA</label>
+    <input id="importData" type="file" accept="application/json,.json" style="display:none">
+    <button class="secondary" id="deleteData" type="button">DELETE ALL DATA</button>
+  </div>
+  <div class="small" id="saveStatus" aria-live="polite">Not saved yet</div>
+</section>
+
+<section class="card">
   <div class="title">1. Your mortgage</div>
   <div class="grid">
     <div><label for="balance">Remaining balance (£)</label><input id="balance" type="number" min="0" step="100" value="250000"></div>
@@ -105,6 +118,7 @@
 
 <div class="footer">For illustration only. Actual results depend on your lender's terms, payment dates, interest-rate changes and any early repayment charges.</div>
 </div>
+<script src="storage.js"></script>
 <script>
 (function(){
 const $=id=>document.getElementById(id);
@@ -162,7 +176,17 @@ function advancedScenario(){
   const description=extras.length?extras.join(', '):'the selected advanced settings';
   $('advancedResult').innerHTML=`With ${description}, the mortgage would be paid off approximately <strong>${duration(saved)}</strong> earlier, with estimated interest savings of <strong>${money(interestSaved)}</strong>. Estimated payoff term: <strong>${duration(adv.months)}</strong>.`;
 }
-$('calculate').addEventListener('click',calculate);$('scenarios').addEventListener('click',scenarios);$('advancedCalc').addEventListener('click',advancedScenario);['balance','rate','years','months','overpay','dob','targetAge'].forEach(id=>{ $(id).addEventListener('input',calculate); $(id).addEventListener('change',calculate); }); calculate();
+$('calculate').addEventListener('click',calculate);$('scenarios').addEventListener('click',scenarios);$('advancedCalc').addEventListener('click',advancedScenario);
+window.calculateMortgage=calculate;
+$('saveData').addEventListener('click',()=>MortgageStorage.save());
+$('exportData').addEventListener('click',()=>MortgageStorage.exportData());
+$('deleteData').addEventListener('click',()=>MortgageStorage.deleteAll());
+$('importData').addEventListener('change',e=>MortgageStorage.importData(e.target.files[0]));['balance','rate','years','months','overpay','dob','targetAge'].forEach(id=>{ $(id).addEventListener('input',calculate); $(id).addEventListener('change',calculate); });
+let saveTimer;
+const autoSaveIds=['balance','rate','years','months','overpay','dob','targetAge','scenario1','scenario2','scenario3','scenario4','oneOff','oneOffMonth','annualExtra','futureRate','rateChangeMonth'];
+autoSaveIds.forEach(id=>{ const el=$(id); if(!el) return; el.addEventListener('input',()=>{ clearTimeout(saveTimer); saveTimer=setTimeout(()=>MortgageStorage.save(),600); }); el.addEventListener('change',()=>{ clearTimeout(saveTimer); saveTimer=setTimeout(()=>MortgageStorage.save(),100); }); });
+calculate();
+MortgageStorage.load();
 })();
 </script>
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}</script>
