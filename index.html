@@ -181,7 +181,11 @@ window.calculateMortgage=calculate;
 $('saveData').addEventListener('click',()=>MortgageStorage.save());
 $('exportData').addEventListener('click',()=>MortgageStorage.exportData());
 $('deleteData').addEventListener('click',()=>MortgageStorage.deleteAll());
-$('importData').addEventListener('change',e=>MortgageStorage.importData(e.target.files[0]));['balance','rate','years','months','overpay','dob','targetAge'].forEach(id=>{ $(id).addEventListener('input',calculate); $(id).addEventListener('change',calculate); }); calculate();
+$('importData').addEventListener('change',e=>MortgageStorage.importData(e.target.files[0]));['balance','rate','years','months','overpay','dob','targetAge'].forEach(id=>{ $(id).addEventListener('input',calculate); $(id).addEventListener('change',calculate); });
+let saveTimer;
+const autoSaveIds=['balance','rate','years','months','overpay','dob','targetAge','scenario1','scenario2','scenario3','scenario4','oneOff','oneOffMonth','annualExtra','futureRate','rateChangeMonth'];
+autoSaveIds.forEach(id=>{ const el=$(id); if(!el) return; el.addEventListener('input',()=>{ clearTimeout(saveTimer); saveTimer=setTimeout(()=>MortgageStorage.save(),600); }); el.addEventListener('change',()=>{ clearTimeout(saveTimer); saveTimer=setTimeout(()=>MortgageStorage.save(),100); }); });
+calculate();
 MortgageStorage.load();
 })();
 </script>
