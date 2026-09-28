@@ -1,7 +1,7 @@
 {
-  "name": "Mortgage Overpayment Calculator",
-  "short_name": "Mortgage Calc",
-  "description": "Compare mortgage overpayments, interest savings and your mortgage-free date.",
+  "name": "Mortgage Money Saver",
+  "short_name": "Mortgage Saver",
+  "description": "Private, local-first mortgage calculators for overpayments, interest savings and mortgage-free planning.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
