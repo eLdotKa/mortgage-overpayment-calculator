@@ -1,0 +1,27 @@
+body { background: linear-gradient(150deg,#7042b8 0,#7434cf 22rem,#f3eef9 52rem); min-height:100vh; }
+.wrap { padding-top: max(62px,calc(env(safe-area-inset-top) + 58px)); }
+.hero { background:linear-gradient(120deg,#51318f,#7025cd 65%,#6158d5); box-shadow:0 12px 38px #37166b30; }
+.hero:after { width:45%; height:200%; top:25%; right:-20%; transform:rotate(35deg); border-radius:20%; background:linear-gradient(#aa97ff20,#71a3ff50); pointer-events:none; }
+.hero h1,.hero p,.hero .eyebrow { position:relative; z-index:1; }
+.hero p,.eyebrow,.result.main .small {color:#efe6ff}
+.languages {position:fixed; z-index:5; top:max(8px,env(safe-area-inset-top)); right:max(14px,calc((100vw - 950px)/2),env(safe-area-inset-right)); background:white; padding:3px; border-radius:40px; box-shadow:0 3px 18px #34166033;}
+.languages button {background:transparent;color:#523278;border-radius:40px;font-size:13px;padding:0;min-width:44px;height:44px}
+.languages [aria-pressed=true],.pages [aria-pressed=true],.primary {background:#6330b3;color:#fff}
+.pages {display:flex; gap:4px;background:white;border-radius:18px;padding:5px;margin-top:16px}
+.pages button {flex:1;background:transparent;color:#493568;min-height:46px}
+button:focus-visible,input:focus-visible {outline:3px solid #9867dd;outline-offset:2px}
+.card {box-shadow:0 5px 20px #43246b0d;border-color:#e6ddef}
+.dashboard-item,.result:not(.main) {background:#f5f0fb}
+.dashboard-value,.value {color:#4c2389}
+.note,.footer {color:#51425e}
+.offers {display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.offers fieldset {min-width:0;border:1px solid #ddd0ee;border-radius:16px;padding:16px;margin:0}
+.offers legend {padding:0 7px;color:#642ead;font-weight:800}
+.offers label {margin-top:10px}
+#compare table {width:100%;border-collapse:collapse;font-size:clamp(12px,2.5vw,16px);font-variant-numeric:tabular-nums}
+#compare th,#compare td {padding:12px 4px;border-bottom:1px solid #eadff3;text-align:right;overflow-wrap:anywhere}
+#compare th:first-child {text-align:left}
+#compare thead {color:#6733aa}
+@media(max-width:520px){.offers{gap:8px}.offers fieldset{padding:9px}.offers input{padding:10px 6px}.card{padding:17px}.offers label{min-height:2.5em}.wrap{padding-bottom:24px}}
+.offers {margin-top:18px}
+#comparisonResults {margin-top:16px}
