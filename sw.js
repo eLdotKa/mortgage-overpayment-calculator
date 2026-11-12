@@ -1,4 +1,4 @@
-const CACHE = 'mortgage-money-saver-v4';
+const CACHE = 'mortgage-money-saver-v5';
 const ASSETS = ['./', './index.html', './manifest.json', './storage.js', './theme.css', './language.js', './offers.js', './icons/icon-192.png', './icons/icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));

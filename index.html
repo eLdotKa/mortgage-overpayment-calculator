@@ -89,6 +89,7 @@
     <div class="result"><div class="lbl">Payment without overpayment</div><div class="value" id="payment">—</div><div class="small">per month</div></div>
     <div class="result"><div class="lbl">Payment + overpayment</div><div class="value" id="totalPayment">—</div><div class="small">per month</div></div>
   </div>
+  <p class="small">Interest is estimated monthly.</p>
   <div class="note" id="summary">—</div>
 </section>
 
@@ -138,14 +139,18 @@
   <div class="title">6. Advanced scenarios</div>
   <div class="subtitle">Test a one-off overpayment, a yearly lump sum, or a future interest-rate change.</div>
   <div class="grid">
-    <div><label for="oneOff">One-off overpayment (£)</label><input id="oneOff" type="number" min="0" step="100" value="0"><div class="small">Enter 0 to make the one-off payment now.</div></div>
-    <div><label for="oneOffMonth">One-off payment after (months)</label><input id="oneOffMonth" type="number" min="0" max="600" step="1" value="0"></div>
+    <div><label for="oneOff">One-off overpayment (£)</label><input id="oneOff" type="number" min="0" step="100" value="0"></div>
+    <div><label for="paymentMonth">One-off payment month</label><input id="paymentMonth" type="month"><input id="oneOffMonth" type="hidden" value="0"></div>
     <div><label for="annualExtra">Annual overpayment (£/year)</label><input id="annualExtra" type="number" min="0" step="100" value="0"><div class="small">Paid at the end of every 12-month period.</div></div>
     <div><label for="futureRate">Future interest rate (%)</label><input id="futureRate" type="number" min="0" step="0.01" placeholder="e.g. 5.25"><div class="small">Leave blank if the rate will not change.</div></div>
     <div><label for="rateChangeMonth">Rate changes after (months)</label><input id="rateChangeMonth" type="number" min="1" max="600" step="1" value="24"></div>
   </div>
   <div class="actions"><button class="secondary" id="advancedCalc">CALCULATE ADVANCED SCENARIO</button></div>
   <div class="note" id="advancedResult">Enter any advanced scenario above and click “Calculate Advanced Scenario”.</div>
+  <p class="small">Interest is estimated monthly.</p>
+  <details id="schedule"><summary>Monthly repayment schedule</summary><div class="schedule-scroll"><table>
+    <thead><tr><th>No.</th><th>Month</th><th>Principal</th><th>Interest</th><th>Balance</th></tr></thead>
+    <tbody id="scheduleRows"></tbody></table></div></details>
 </section>
 
 </main>
@@ -169,6 +174,7 @@ function calculate(){
   const base=simulate(0),extra=Math.max(0,Number($('overpay').value)||0),withExtra=simulate(extra),saved=Math.max(0,base.months-withExtra.months),interestSaved=Math.max(0,base.interest-withExtra.interest);
   $('savedTime').textContent=duration(saved);$('savedInterest').textContent=money(interestSaved);$('payment').textContent=money(base.payment);$('totalPayment').textContent=money(base.payment+extra);
   $('summary').textContent=extra>0?(isPolish()?`Przy nadpłacie ${money(extra)} miesięcznie okres spłaty skróci się o ${duration(saved)}. Oszczędność na odsetkach wyniesie około ${money(interestSaved)}.`:`With a monthly overpayment of ${money(extra)}, the mortgage would be paid off approximately ${duration(saved)} earlier, with estimated interest savings of ${money(interestSaved)}.`):tr('Set a monthly overpayment above £0 to see your potential savings.');
+  drawSchedule();
   drawChart(base.months,withExtra.months);updateAge(base.months,withExtra.months);updateDashboard(base,withExtra,saved,interestSaved,extra);
 }
 function updateDashboard(base,withExtra,saved,interestSaved,extra){
@@ -187,11 +193,47 @@ function findRequiredOverpayment(targetMonths){const base=simulate(0);if(base.mo
 function drawChart(base,extra){const chart=$('chart');chart.innerHTML='';const max=Math.max(base,extra,1);[base,extra].forEach((m,i)=>{const col=document.createElement('div');col.className='barcol';const value=document.createElement('div');value.className='barvalue';value.textContent=duration(m);const b=document.createElement('div');b.className='bar'+(i?' alt':'');b.style.height=Math.max(3,(m/max)*72)+'%';const label=document.createElement('div');label.className='barlabel';label.textContent=i?tr('With overpayment'):tr('Without overpayment');col.append(value,b,label);chart.appendChild(col)})}
 let showedScenarios=false, showedAdvanced=false;
 function scenarios(){showedScenarios=true;const base=simulate(0),ids=['scenario1','scenario2','scenario3','scenario4'];$('scenarioResult').innerHTML=ids.map(id=>{const x=Math.max(0,Number($(id).value)||0),s=simulate(x),saved=Math.max(0,base.months-s.months),interest=Math.max(0,base.interest-s.interest);return `<div style="margin:6px 0;font-weight:700">${isPolish()?`${money(x)}/mies. → krócej o ${duration(saved)}, oszczędność ${money(interest)}`:`${money(x)}/month → ${duration(saved)} earlier, interest saved ${money(interest)}`}</div>`}).join('')}
-function advancedSimulation(){
+function monthKey(date){
+  return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0');
+}
+function monthOffset(){
+  const [year,month]=$('paymentMonth').value.split('-').map(Number);
+  const today=new Date();
+  return (year-today.getFullYear())*12+month-1-today.getMonth();
+}
+window.restorePaymentMonth=fields=>{
+  const next=addMonths(new Date(),1);
+  $('paymentMonth').min=monthKey(next);
+  if(!fields.paymentMonth){
+    const offset=Math.max(1,Number(fields.oneOffMonth)||1);
+    $('paymentMonth').value=monthKey(addMonths(new Date(),offset));
+  }
+};
+window.restorePaymentMonth({});
+function validPaymentMonth(){
+  return Number($('oneOff').value)<=0 || (monthOffset()>=1 && monthOffset()<=getInputs().totalMonths);
+}
+function drawSchedule(){
+  if(!$('schedule').open) return;
+  if(!validPaymentMonth()){
+    $('scheduleRows').innerHTML='<tr><td colspan="5">'+tr('Choose a payment month within the remaining term.')+'</td></tr>';
+    return;
+  }
+  const rows=[];
+  const moneyFmt=new Intl.NumberFormat(locale(),{style:'currency',currency:'GBP'});
+  const monthFmt=new Intl.DateTimeFormat(locale(),{month:'short',year:'numeric'});
+  const today=new Date();
+  advancedSimulation((number,principal,interest,balance)=>{
+    rows.push('<tr><td>'+number+'</td><td>'+monthFmt.format(addMonths(today,number))+'</td><td>'+moneyFmt.format(principal)+'</td><td>'+moneyFmt.format(interest)+'</td><td>'+moneyFmt.format(balance)+'</td></tr>');
+  });
+  $('scheduleRows').innerHTML=rows.join('');
+}
+$('schedule').addEventListener('toggle',drawSchedule);
+function advancedSimulation(onPayment){
   const {P,annual,totalMonths}=getInputs();
   const monthlyExtra=Math.max(0,Number($('overpay').value)||0);
   const oneOff=Math.max(0,Number($('oneOff').value)||0);
-  const oneOffMonth=Math.max(0,Math.min(600,Math.round(Number($('oneOffMonth').value)||0)));
+  const oneOffMonth=monthOffset();
   const annualExtra=Math.max(0,Number($('annualExtra').value)||0);
   const futureRateRaw=$('futureRate').value.trim();
   const futureRate=futureRateRaw===''?null:Math.max(0,Number(futureRateRaw))/100;
@@ -208,15 +250,20 @@ function advancedSimulation(){
     const interestMonth=bal*(rate/12);
     let pay=payment+monthlyExtra;
     const monthNumber=months+1;
-    if(oneOff>0 && (oneOffMonth===0 ? monthNumber===1 : monthNumber===oneOffMonth)) pay+=oneOff;
+    if(oneOff>0 && monthNumber===oneOffMonth) pay+=oneOff;
     if(annualExtra>0 && monthNumber%12===0) pay+=annualExtra;
     const principal=Math.min(bal,Math.max(0,pay-interestMonth));
     if(principal<=0) break;
     interest+=interestMonth; bal-=principal; months++;
+    if(onPayment) onPayment(months,principal,interestMonth,bal);
   }
   return {months,interest,payment};
 }
 function advancedScenario(){showedAdvanced=true;
+  if(!validPaymentMonth()){
+    $('advancedResult').textContent=tr('Choose a payment month within the remaining term.');
+    return;
+  }
   const base=simulate(0), adv=advancedSimulation();
   if(!adv.months){$('advancedResult').textContent=tr('Please enter valid mortgage details first.');return;}
   const saved=Math.max(0,base.months-adv.months), interestSaved=Math.max(0,base.interest-adv.interest);
@@ -241,8 +288,12 @@ $('saveData').addEventListener('click',()=>MortgageStorage.save());
 $('exportData').addEventListener('click',()=>MortgageStorage.exportData());
 $('deleteData').addEventListener('click',()=>MortgageStorage.deleteAll());
 $('importData').addEventListener('change',e=>MortgageStorage.importData(e.target.files[0]));['balance','rate','years','months','overpay','dob','targetAge'].forEach(id=>{ $(id).addEventListener('input',calculate); $(id).addEventListener('change',calculate); });
+$('paymentMonth').addEventListener('input',()=>{$('oneOffMonth').value=monthOffset()||0;});
+for(const id of ['paymentMonth','oneOff','annualExtra','futureRate','rateChangeMonth']){
+  $(id).addEventListener('input',()=>{drawSchedule();if(showedAdvanced) advancedScenario();});
+}
 let saveTimer;
-const autoSaveIds=['balance','rate','years','months','overpay','dob','targetAge','scenario1','scenario2','scenario3','scenario4','oneOff','oneOffMonth','annualExtra','futureRate','rateChangeMonth'];
+const autoSaveIds=['balance','rate','years','months','overpay','dob','targetAge','scenario1','scenario2','scenario3','scenario4','oneOff','paymentMonth','annualExtra','futureRate','rateChangeMonth'];
 autoSaveIds.forEach(id=>{ const el=$(id); if(!el) return; el.addEventListener('input',()=>{ clearTimeout(saveTimer); saveTimer=setTimeout(()=>MortgageStorage.save(),600); }); el.addEventListener('change',()=>{ clearTimeout(saveTimer); saveTimer=setTimeout(()=>MortgageStorage.save(),100); }); });
 calculate();
 MortgageStorage.load();MortgageStorage.renderScenarios();

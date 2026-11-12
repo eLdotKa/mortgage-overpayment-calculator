@@ -1,4 +1,9 @@
 const polish = {
+  "One-off payment month":"Miesiąc jednorazowej nadpłaty",
+  "Choose a payment month within the remaining term.":"Wybierz miesiąc od najbliższej raty do końca okresu spłaty.",
+  "Interest is estimated monthly.":"Odsetki szacujemy miesięcznie.",
+  "Monthly repayment schedule":"Miesięczny harmonogram spłaty",
+  "No.":"Nr raty","Month":"Miesiąc","Principal":"Kapitał","Interest":"Odsetki","Balance":"Saldo",
   "Mortgage Overpayment Calculator": "Kalkulator nadpłat kredytu",
   "See when you could become mortgage-free": "Kiedy spłacisz kredyt?",
   "Compare your mortgage with and without overpayments, estimate interest savings, and see how old you could be when the mortgage is finally paid off.": "Sprawdź, o ile nadpłaty skrócą okres spłaty, ile zaoszczędzisz na odsetkach i w jakim wieku spłacisz ostatnią ratę.",

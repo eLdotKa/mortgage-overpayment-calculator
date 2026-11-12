@@ -25,3 +25,10 @@ button:focus-visible,input:focus-visible {outline:3px solid #9867dd;outline-offs
 @media(max-width:520px){.offers{gap:8px}.offers fieldset{padding:9px}.offers input{padding:10px 6px}.card{padding:17px}.offers label{min-height:2.5em}.wrap{padding-bottom:24px}}
 .offers {margin-top:18px}
 #comparisonResults {margin-top:16px}
+#horizon {font:inherit;padding:10px;border-radius:12px;color:#46227a;background:white;border:1px solid #d9cbe9}
+label[for=horizon],#schedule {margin-top:18px}
+#schedule summary {cursor:pointer;color:#54318d;font-weight:700;padding:10px 0}
+.schedule-scroll {overflow:auto;max-height:24rem}
+.schedule-scroll table {border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:.85rem}
+.schedule-scroll th,.schedule-scroll td {text-align:right;white-space:nowrap;padding:8px;border-bottom:1px solid #e7dff0}
+.schedule-scroll th {position:sticky;top:0;background:#f6f1fa}

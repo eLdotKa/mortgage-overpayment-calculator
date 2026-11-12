@@ -47,7 +47,7 @@
   const FIELD_IDS=[
     'balance','rate','years','months','overpay','dob','targetAge',
     'scenario1','scenario2','scenario3','scenario4',
-    'oneOff','oneOffMonth','annualExtra','futureRate','rateChangeMonth'
+    'oneOff','paymentMonth','oneOffMonth','annualExtra','futureRate','rateChangeMonth'
   ];
 
   function collectFields(){
@@ -59,9 +59,11 @@
   function applyFields(fields){
     if(!fields) return false;
     Object.entries(fields).forEach(([id,value])=>{
+      if(!FIELD_IDS.includes(id)) return;
       const el=document.getElementById(id);
       if(el && typeof value==='string') el.value=value;
     });
+    window.restorePaymentMonth(fields);
     return true;
   }
 
@@ -133,7 +135,7 @@
   }
 
   async function exportData(){
-    try{ currentScenarios=normaliseScenarios(await read()); downloadJSON(getData()); setStatus('Data exported'); }
+    try{ currentScenarios=normaliseScenarios(await read()); downloadJSON({...getData(),version:3,comparison:window.DealComparison.snapshot()}); setStatus('Data exported'); }
     catch(e){ setStatus('Export failed'); }
   }
 
@@ -142,12 +144,14 @@
     try{
       const text=await file.text();
       const data=JSON.parse(text);
-      if(!data || ![1,2].includes(data.version) || !data.fields) throw new Error('Invalid data file');
+      if(!data || ![1,2,3].includes(data.version) || !data.fields) throw new Error('Invalid data file');
+      if(data.version===3 && data.comparison) window.DealComparison.importData(data.comparison);
       currentScenarios=normaliseScenarios(data);
       applyFields(data.fields);
       await write({version:2,savedAt:new Date().toISOString(),fields:collectFields(),scenarios:currentScenarios});
       renderScenarios();
       if(typeof window.calculateMortgage==='function') window.calculateMortgage();
+      if(data.version===3 && !data.comparison) window.DealComparison.reset();
       setStatus('Data imported');
     }catch(e){ setStatus('Import failed - please choose a valid Mortgage Money Saver JSON file'); }
   }
@@ -156,6 +160,7 @@
     const confirmed=window.confirm(tr('Delete all saved mortgage data from this device? This cannot be undone.'));
     if(!confirmed) return;
     await clear();
+    window.DealComparison.reset();
     currentScenarios=[];
     FIELD_IDS.forEach(id=>{
       const el=document.getElementById(id);
