@@ -47,7 +47,7 @@
   const FIELD_IDS=[
     'balance','rate','years','months','overpay','dob','targetAge',
     'scenario1','scenario2','scenario3','scenario4',
-    'oneOff','oneOffMonth','annualExtra','futureRate','rateChangeMonth'
+    'oneOff','paymentMonth','oneOffMonth','annualExtra','futureRate','rateChangeMonth'
   ];
 
   function collectFields(){
@@ -59,9 +59,11 @@
   function applyFields(fields){
     if(!fields) return false;
     Object.entries(fields).forEach(([id,value])=>{
+      if(!FIELD_IDS.includes(id)) return;
       const el=document.getElementById(id);
       if(el && typeof value==='string') el.value=value;
     });
+    window.restorePaymentMonth(fields);
     return true;
   }
 
@@ -71,7 +73,7 @@
 
   function setStatus(message){
     const el=document.getElementById('saveStatus');
-    if(el){ el.textContent=message; el.dataset.state='saved'; }
+    if(el){ el.dataset.message=message; el.textContent=tr(message); el.dataset.state='saved'; }
   }
 
   let currentScenarios=[];
@@ -84,13 +86,13 @@
     const list=document.getElementById('savedScenarios');
     if(!list) return;
     if(!currentScenarios.length){
-      list.innerHTML='<div class="small">No saved scenarios yet.</div>';
+      list.innerHTML='<div class="small">'+tr('No saved scenarios yet.')+'</div>';
       return;
     }
     list.innerHTML=currentScenarios.map(s=>{
       const safeName=String(s.name).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
       const saved=String(s.savedAt||'').slice(0,10);
-      return '<div class="scenario-row"><div><strong>'+safeName+'</strong><div class="small">Saved '+saved+'</div></div><div class="actions scenario-actions"><button class="secondary scenario-load" data-id="'+s.id+'" type="button">LOAD</button><button class="secondary scenario-delete" data-id="'+s.id+'" type="button">DELETE</button></div></div>';
+      return '<div class="scenario-row"><div><strong>'+safeName+'</strong><div class="small">'+tr('Saved')+' '+saved+'</div></div><div class="actions scenario-actions"><button class="secondary scenario-load" data-id="'+s.id+'" type="button">'+tr('LOAD')+'</button><button class="secondary scenario-delete" data-id="'+s.id+'" type="button">'+tr('DELETE')+'</button></div></div>';
     }).join('');
     list.querySelectorAll('.scenario-load').forEach(btn=>btn.addEventListener('click',()=>loadScenario(btn.dataset.id)));
     list.querySelectorAll('.scenario-delete').forEach(btn=>btn.addEventListener('click',()=>deleteScenario(btn.dataset.id)));
@@ -133,7 +135,7 @@
   }
 
   async function exportData(){
-    try{ currentScenarios=normaliseScenarios(await read()); downloadJSON(getData()); setStatus('Data exported'); }
+    try{ currentScenarios=normaliseScenarios(await read()); downloadJSON({...getData(),version:3,comparison:window.DealComparison.snapshot()}); setStatus('Data exported'); }
     catch(e){ setStatus('Export failed'); }
   }
 
@@ -142,20 +144,23 @@
     try{
       const text=await file.text();
       const data=JSON.parse(text);
-      if(!data || ![1,2].includes(data.version) || !data.fields) throw new Error('Invalid data file');
+      if(!data || ![1,2,3].includes(data.version) || !data.fields) throw new Error('Invalid data file');
+      if(data.version===3 && data.comparison) window.DealComparison.importData(data.comparison);
       currentScenarios=normaliseScenarios(data);
       applyFields(data.fields);
       await write({version:2,savedAt:new Date().toISOString(),fields:collectFields(),scenarios:currentScenarios});
       renderScenarios();
       if(typeof window.calculateMortgage==='function') window.calculateMortgage();
+      if(data.version===3 && !data.comparison) window.DealComparison.reset();
       setStatus('Data imported');
     }catch(e){ setStatus('Import failed - please choose a valid Mortgage Money Saver JSON file'); }
   }
 
   async function deleteAll(){
-    const confirmed=window.confirm('Delete all saved mortgage data from this device? This cannot be undone.');
+    const confirmed=window.confirm(tr('Delete all saved mortgage data from this device? This cannot be undone.'));
     if(!confirmed) return;
     await clear();
+    window.DealComparison.reset();
     currentScenarios=[];
     FIELD_IDS.forEach(id=>{
       const el=document.getElementById(id);
@@ -201,6 +206,7 @@
   }
 
   window.MortgageStorage={
+    refreshStatus(){const key=document.getElementById("saveStatus").dataset.message;if(key)setStatus(key);},
     load,save,exportData,importData,deleteAll,collect:()=>getData(),
     saveScenario,loadScenario,deleteScenario,renderScenarios
   };
